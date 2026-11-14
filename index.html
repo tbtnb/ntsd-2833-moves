@@ -6,9 +6,9 @@
   <meta name="color-scheme" content="dark">
   <meta name="description" content="NTSD 2.8.3.3 简体中文出招表。搜索全角色技能、连段和变身，按自己的键位显示所有指令。">
   <title>NTSD 2.8.3.3 · 忍术出招表</title>
-  <link rel="stylesheet" href="./style.css">
+  <link rel="stylesheet" href="./style.css?v=2">
   <script src="./moves.js" defer></script>
-  <script src="./app.js" defer></script>
+  <script src="./app.js?v=2" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#moves-pane">跳到招式</a>
@@ -36,6 +36,7 @@
       </label>
       <button type="button" class="primary" id="edit-keys">设置键位</button>
       <div id="key-summary" class="key-summary"></div>
+      <a id="secret-link" class="secret-link" href="#secret-moves">查隐藏招式</a>
     </section>
     <dialog id="key-dialog" aria-labelledby="settings-title">
       <div class="dialog-title">
@@ -75,6 +76,23 @@
         <nav class="roster-list" id="roster"></nav>
       </aside>
       <section class="moves-pane" id="moves-pane" aria-label="招式列表">
+        <template id="mission-clues">
+          <details class="mission-clues">
+            <summary>任务模式的隐藏指令线索</summary>
+            <div>
+              <ol>
+                <li><strong>1-4</strong> 在被黏土炸弹操纵的敌人自爆前，将他们全部击败。</li>
+                <li><strong>2-3</strong> 躲开致命一击，留在场上等一会儿。</li>
+                <li><strong>3-3</strong> 清掉场上的树，保留所有陷阱。</li>
+                <li><strong>4-5</strong> 每次都选择错误的鼬，并打败他们。</li>
+                <li><strong>5-5</strong> 把佩恩的尸体带到场地最右端，击败纲手。</li>
+                <li><strong>生存模式</strong> 通过生存挑战。开发者提示未给出具体波数。</li>
+              </ol>
+              <p>完成挑战后留意游戏画面显示的指令。开发者公布的线索没有标明每关对应哪一招。<a href="https://discord.com/channels/253945813774893056/547272871190331402/815896742234161185">官方 Discord 任务线索</a></p>
+              <p>想直接选择隐藏角色，可以点 <strong>Start</strong> 后在模式选择画面输入 <code>kanchoo</code>。部分秘密形态仍需在对战中触发。</p>
+            </div>
+          </details>
+        </template>
         <div id="content"></div>
         <noscript>请启用 JavaScript 查看可自定义键位的出招表。</noscript>
       </section>

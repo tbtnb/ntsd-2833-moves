@@ -16,6 +16,10 @@ const searchToken = /(?<![a-z0-9])(?:DashL|Dash|Sage Mode|Air|Cs2|CS2|Ae|\(hold\
 const commandTokens = /DashL|Dash|Ae|Air|catch|Sage Mode|Cs2|\(hold\)|\(Hold\)|>\/\^\/v|\.\.\.|[AJDGHKBRv^<>]|./g;
 const counts = roster.reduce((total, group) => total + group.moves.length, 0);
 const initial = 'uzumaki-naruto';
+const secretView = 'secret-moves';
+const isUnconfirmed = move => /^\?+$/.test(move.code);
+const isSecretEntry = (group, move) =>
+  isUnconfirmed(move) || (group.id === 'pain-deva-path' && move.en === 'Farewell');
 
 let keys = {...defaultKeys};
 try {
@@ -29,6 +33,7 @@ try {
   }
 } catch {}
 let selected = byId.has(location.hash.slice(1)) ? location.hash.slice(1) : initial;
+let showSecrets = location.hash === '#' + secretView;
 let category = 'all';
 let query = '';
 let listening = '';
@@ -90,7 +95,7 @@ function effectiveMoves(group) {
   const blocked = new Set(group.blocked || []);
   const overridden = new Set([...group.moves.map(move => move.code), ...blocked]);
   return [...group.moves, ...effectiveMoves(base)
-    .filter(move => !overridden.has(move.code) && !blocked.has(move.starter) && !/^\?+$/.test(move.code))
+    .filter(move => !overridden.has(move.code) && !blocked.has(move.starter) && !isUnconfirmed(move))
     .map(move => ({...move, inherited: move.inherited || base.name}))];
 }
 
@@ -107,12 +112,15 @@ function mappedText(code) {
 function matches(group, move, terms) {
   const names = [group.name, group.en, byId.get(group.parent)?.name, byId.get(group.parent)?.en];
   const haystack = normalize([...names, move.name, move.en, move.code, mappedText(move.code),
+    isUnconfirmed(move) ? '隐藏招式 隐藏指令' : '',
     move.parent, move.starter, ...(move.notes || []), ...(move.values || [])].filter(Boolean).join(' '));
   return terms.every(term => haystack.includes(term));
 }
 
 function movesMatching(group) {
-  const moves = effectiveMoves(group);
+  const moves = showSecrets
+    ? group.moves.filter(move => isSecretEntry(group, move))
+    : effectiveMoves(group);
   return query ? moves.filter(move => matches(group, move, query.toLowerCase().split(/\s+/).map(normalize))) : moves;
 }
 
@@ -159,6 +167,7 @@ function setListening(action) {
 
 function selectGroup(id, scroll = false) {
   selected = id;
+  showSecrets = false;
   search.value = '';
   query = '';
   if (category !== 'all' && byId.get(id).type !== category) category = 'all';
@@ -179,7 +188,7 @@ function renderRoster(groups) {
   $('#roster').replaceChildren(...groups.map(([group, moves]) => {
     const link = make('a', `fighter${group.parent ? ' form' : ''}`);
     link.href = '#' + group.id;
-    if (!query && selected === group.id) link.setAttribute('aria-current', 'true');
+    if (!query && !showSecrets && selected === group.id) link.setAttribute('aria-current', 'true');
     link.append(make('span', '', group.name), make('span', 'fighter-count', moves.length));
     return link;
   }));
@@ -188,7 +197,7 @@ function renderRoster(groups) {
     option.value = group.id;
     return option;
   }));
-  if (query) picker.prepend(new Option('定位搜索结果', '', true, true));
+  if (query || showSecrets) picker.prepend(new Option('定位结果', '', true, true));
   else picker.value = selected;
   picker.disabled = groups.length === 0;
 }
@@ -204,12 +213,14 @@ function showMove(move) {
   if (move.code) original.append(make('code', '', move.code));
   if (move.en) original.append(document.createTextNode((move.code ? ' · ' : '') + move.en));
   codeSettings.append(original);
-  if (/^\?+$/.test(move.code)) {
+  if (isUnconfirmed(move)) {
     command.append(make('span', 'state', '原表未公开按法'));
   } else if (move.code) {
     appendCommand(command, move.code);
   }
   const badges = make('div', 'badges');
+  if (isUnconfirmed(move)) badges.append(make('span', 'badge', '隐藏招式'));
+  else if (showSecrets) badges.append(make('span', 'badge', '随包出招表已列明按法'));
   if (move.kind === 'combo') badges.append(make('span', 'badge', '连段 / 基础操作'));
   if (move.parent) badges.append(make('span', 'badge', '派生 · ' + move.parent));
   if (move.inherited) badges.append(make('span', 'badge', '沿用 · ' + move.inherited));
@@ -222,6 +233,7 @@ function showMove(move) {
     mainColumn.append(entry);
   }
   for (const text of move.notes || []) {
+    if (showSecrets && (text === '隐藏按法，请自行探索' || text === '原表未注明')) continue;
     const note = make('p', 'move-note');
     appendNote(note, text);
     mainColumn.append(note);
@@ -247,12 +259,18 @@ function showGroup(group, moves) {
   section.id = 'result-' + group.id;
   const header = make('header', 'sheet-header');
   const titleArea = make('div');
-  titleArea.append(make('span', 'sheet-category', categories[group.type]), make('h2', '', group.name));
+  const heading = make('h2');
+  if (showSecrets) {
+    const link = make('a', 'fighter-sheet-link', group.name);
+    link.href = '#' + group.id;
+    heading.append(link);
+  } else heading.textContent = group.name;
+  titleArea.append(make('span', 'sheet-category', categories[group.type]), heading);
   if (group.type !== 'common') titleArea.append(make('p', 'fighter-en', group.en));
   header.append(titleArea, make('span', 'sheet-count', `${moves.length} 条`));
   section.append(header);
   const forms = roster.filter(form => form.parent === (group.parent || group.id));
-  if (!query && (group.parent || forms.length)) {
+  if (!query && !showSecrets && (group.parent || forms.length)) {
     const list = make('nav', 'forms');
     list.setAttribute('aria-label', '该角色的形态');
     for (const form of [byId.get(group.parent || group.id), ...forms]) {
@@ -276,10 +294,19 @@ function showGroup(group, moves) {
 function render() {
   const listed = roster.filter(group => category === 'all' || category === group.type)
     .map(group => [group, movesMatching(group)])
-    .filter(([, moves]) => !query || moves.length);
+    .filter(([, moves]) => (!query && !showSecrets) || moves.length);
+  $('#secret-link').setAttribute('aria-current', showSecrets ? 'page' : 'false');
   renderRoster(listed);
   const content = $('#content');
-  if (query) {
+  if (showSecrets) {
+    const header = make('section', 'secret-intro');
+    header.id = secretView;
+    header.append(make('h2', '', '隐藏招式'),
+      make('p', '', '2.8.3.3 原表有 9 招未公布按法。可以按下方任务线索获取指令，或查看天道佩恩切回畜生道的已知按法。'),
+      $('#mission-clues').content.cloneNode(true));
+    if (!listed.length) header.append(make('p', '', '没有找到匹配的隐藏招式。'));
+    content.replaceChildren(header, ...listed.map(([group, moves]) => showGroup(group, moves)));
+  } else if (query) {
     const total = listed.reduce((sum, [, moves]) => sum + moves.length, 0);
     const heading = make('p', 'results-label', total ? `找到 ${total} 条招式` : '未找到匹配的招式。试试角色名、版本原指令，或选择「全部」。');
     heading.setAttribute('role', 'status');
@@ -294,37 +321,52 @@ search.addEventListener('input', () => {
   query = search.value.trim();
   render();
 });
+$('#secret-link').addEventListener('click', event => {
+  event.preventDefault();
+  showSecrets = true;
+  category = 'all';
+  query = search.value = '';
+  history.replaceState(null, '', '#' + secretView);
+  render();
+  $('#moves-pane').scrollIntoView({block: 'start'});
+});
 $('#filters').addEventListener('click', event => {
   const button = event.target.closest('button[data-category]');
   if (!button) return;
+  showSecrets = false;
   category = button.dataset.category;
   if (category !== 'all' && byId.get(selected).type !== category) {
     selected = roster.find(group => group.type === category).id;
-    history.replaceState(null, '', '#' + selected);
   }
+  history.replaceState(null, '', '#' + selected);
   render();
 });
 $('#roster').addEventListener('click', event => {
   const link = event.target.closest('a');
   if (!link || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
   event.preventDefault();
-  if (query) $('#result-' + link.hash.slice(1)).scrollIntoView({block: 'start'});
+  if (query || showSecrets) $('#result-' + link.hash.slice(1)).scrollIntoView({block: 'start'});
   else selectGroup(link.hash.slice(1), true);
 });
 $('#content').addEventListener('click', event => {
-  const link = event.target.closest('.forms a');
+  const link = event.target.closest('.forms a, .fighter-sheet-link');
   if (!link || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
   event.preventDefault();
   selectGroup(link.hash.slice(1));
 });
 picker.addEventListener('change', () => {
   if (!picker.value) return;
-  if (query) $('#result-' + picker.value).scrollIntoView({block: 'start'});
+  if (query || showSecrets) $('#result-' + picker.value).scrollIntoView({block: 'start'});
   else selectGroup(picker.value, true);
 });
 window.addEventListener('hashchange', () => {
   const id = location.hash.slice(1);
-  if (byId.has(id)) selectGroup(id);
+  if (id === secretView) {
+    showSecrets = true;
+    category = 'all';
+    query = search.value = '';
+    render();
+  } else if (byId.has(id)) selectGroup(id);
 });
 document.addEventListener('keydown', event => {
   if (event.key === '/' && !dialog.open && !['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
