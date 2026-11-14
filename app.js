@@ -87,9 +87,10 @@ function appendNote(target, text) {
 function effectiveMoves(group) {
   if (!group.inherit) return group.moves;
   const base = byId.get(group.inherit);
-  const overridden = new Set([...group.moves.map(move => move.code), ...(group.blocked || [])]);
+  const blocked = new Set(group.blocked || []);
+  const overridden = new Set([...group.moves.map(move => move.code), ...blocked]);
   return [...group.moves, ...effectiveMoves(base)
-    .filter(move => !overridden.has(move.code) && !overridden.has(move.starter) && !/^\?+$/.test(move.code))
+    .filter(move => !overridden.has(move.code) && !blocked.has(move.starter) && !/^\?+$/.test(move.code))
     .map(move => ({...move, inherited: move.inherited || base.name}))];
 }
 
