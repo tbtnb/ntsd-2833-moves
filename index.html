@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="description" content="NTSD 2.8.3.3 简体中文出招表。搜索全角色技能、连段和变身，按自己的键位显示所有指令。">
+  <title>NTSD 2.8.3.3 · 忍术出招表</title>
+  <link rel="stylesheet" href="./style.css">
+  <script src="./moves.js" defer></script>
+  <script src="./app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#moves-pane">跳到招式</a>
+  <header class="top">
+    <div class="shell top-inner">
+      <a class="brand" href="./" aria-label="NTSD 出招表首页"><span class="mark" aria-hidden="true">忍</span> NTSD 出招表</a>
+      <span class="version">2.8.3.3</span>
+    </div>
+  </header>
+  <main class="shell">
+    <section class="hero" aria-labelledby="site-title">
+      <div class="hero-art" aria-hidden="true"><span></span></div>
+      <div class="hero-copy">
+        <div class="subtitle" lang="en">NARUTO THE SETTING DAWN</div>
+        <h1 id="site-title">忍术出招表</h1>
+        <p>全角色招式、连段与变身。按你的键位查招。</p>
+      </div>
+    </section>
+
+    <section class="controls" aria-label="查招设置">
+      <label class="search-box" for="search">
+        <span class="search-icon" aria-hidden="true"></span>
+        <input id="search" type="search" aria-label="搜索角色、招式或按键" placeholder="搜索角色、招式或按键" autocomplete="off" spellcheck="false">
+        <span class="search-hint" aria-hidden="true">/</span>
+      </label>
+      <button type="button" class="primary" id="edit-keys">设置键位</button>
+      <div id="key-summary" class="key-summary"></div>
+    </section>
+    <dialog id="key-dialog" aria-labelledby="settings-title">
+      <div class="dialog-title">
+        <h2 id="settings-title">设置键位</h2>
+        <button type="button" class="plain" id="close-keys" aria-label="关闭">×</button>
+      </div>
+      <p>点击要修改的键帽，然后按下游戏里对应的键。出招表会即时更新，设置保存在当前浏览器。</p>
+      <div id="key-fields" class="key-fields"></div>
+      <p id="key-message" role="status" class="key-message"></p>
+      <label id="manual-key-label" class="manual-key" hidden>或从列表选择 <select id="manual-key"></select></label>
+      <div class="dialog-actions">
+        <button type="button" id="reset-keys" class="secondary">恢复 WASD + JKL</button>
+        <button type="button" class="primary" id="done-keys">完成</button>
+      </div>
+    </dialog>
+
+    <details class="legend">
+      <summary>怎么看指令</summary>
+      <div class="legend-grid">
+        <p><b>顺序</b> 从左到右输入。两个相同方向键表示连按两次；左右键放在同一格表示按其中一个。</p>
+        <p><b>加号</b> 保留原表的组合或追加记号。派生攻击的时机见招式说明。</p>
+        <p><b>状态</b> 被击飞、倒地、格挡后等文字是出招条件。空中技可在空中施放。</p>
+        <p><b>数值</b> CP 是查克拉，HP 是生命值，PS 表示每秒。可打倒地的招式通常对倒地敌人造成 50 点伤害。</p>
+      </div>
+    </details>
+
+    <div class="guide-layout">
+      <aside class="roster" aria-label="角色导航">
+        <div class="roster-header">
+          <h2>角色目录</h2>
+          <span id="roster-count"></span>
+        </div>
+        <div class="filters" id="filters" aria-label="角色分类"></div>
+        <label class="mobile-picker" for="fighter-picker">角色 / 形态
+          <select id="fighter-picker"></select>
+        </label>
+        <nav class="roster-list" id="roster"></nav>
+      </aside>
+      <section class="moves-pane" id="moves-pane" aria-label="招式列表">
+        <div id="content"></div>
+        <noscript>请启用 JavaScript 查看可自定义键位的出招表。</noscript>
+      </section>
+    </div>
+  </main>
+  <footer class="shell">
+    <p>《火影忍者：黎明降临》玩家出招指南。整理自 NTSD 2.8.3.3 随包出招表、自定义出招表及更新日志。<a href="https://ntsd.forumotion.com/">NTSD 官方论坛</a></p>
+  </footer>
+</body>
+</html>
